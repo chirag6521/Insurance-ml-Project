@@ -59,6 +59,7 @@ class ConfigurationManager:
         data_transformation_config = DataTransformationConfig(
             root_dir=config.root_dir,
             data_path=config.data_path,
+            categorical_features = config.categorical_features
         )
 
         return data_transformation_config
@@ -84,18 +85,22 @@ class ConfigurationManager:
         return model_trainer_config
     
     def get_model_evaluation_config(self) -> ModelEvaluationConfig:
-        config = self.config.model_evaluation
-        schema = self.schema.TARGET_COLUMN
+        config = self.config.get("model_evaluation", {})
+        params = self.params.get("ElasticNet", {})
+        schema = self.schema.get("TARGET_COLUMN", {})
 
-        create_directories([config.root_dir])
+        root_dir = config.get("root_dir", "")
+        test_data_path = config.get("test_data_path", "")
+        model_path = config.get("model_path", "")
+        metric_file_name = config.get("metric_file_name", "")
+        target_column = schema.get("name", "")
 
         model_evaluation_config = ModelEvaluationConfig(
-            root_dir=config.root_dir,
-            test_data_path=config.test_data_path,
-            model_path=config.model_path,
-            all_params={},  # Placeholder, you can add parameters here if needed
-            metric_file_name=config.metric_file_name,
-            target_column=schema.name
+            root_dir=root_dir,
+            test_data_path=test_data_path,
+            model_path=model_path,
+            all_params=params,
+            metric_file_name=metric_file_name,
+            target_column=target_column
         )
-
         return model_evaluation_config
