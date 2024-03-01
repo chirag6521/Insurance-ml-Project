@@ -1,49 +1,53 @@
-import os
-from src.mlProject.logging import logger
-from sklearn.model_selection import train_test_split
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
 import joblib
-from src.mlProject.entity.config_entity import DataTransformationConfig
+from pathlib import Path
 
+class DataTransformationConfig:
+    def __init__(self, root_dir: str, data_path: str, categorical_features: list):
+        self.root_dir = root_dir
+        self.data_path = data_path
+        self.categorical_features = categorical_features
 
 class DataTransformation:
     def __init__(self, config):
         self.config = config
-        self.encoder = None
+        
+    def train_test_spliting(self, categorical_features):
+        data_path = self.config.data_path
+        
+        # Load the data
+        data = pd.read_csv(data_path)
 
-    def train_test_split_and_encode(self):
-        data = pd.read_csv(self.config.data_path)
+        # Separate features and target variable
+        X = data.drop(columns=['expenses'])
+        y = data['expenses']
 
-        # Define categorical columns
-        categorical_cols = ['sex', 'smoker', 'region']
-        target_column = 'expenses'
+        # One-hot encode categorical features
+        encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
+        X_encoded = pd.DataFrame(encoder.fit_transform(X[categorical_features]))
+        X_encoded.columns = encoder.get_feature_names_out(input_features=categorical_features)
+        X.drop(columns=categorical_features, inplace=True)
+        X = pd.concat([X, X_encoded], axis=1)
 
-        # Encode categorical columns
-        data_encoded = pd.get_dummies(data, columns=categorical_cols, drop_first=True)
+        # Split the data into train and test sets
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Ensure 'expenses' column is included in the encoded data
-        if target_column not in data_encoded.columns:
-            raise ValueError(f"'{target_column}' column is missing in the encoded data")
+        # Add 'expenses' column back to train and test data
+        X_train['expenses'] = y_train
+        X_test['expenses'] = y_test
 
-        # Split the data into features (X) and target variable (y)
-        X = data_encoded.drop(columns=[target_column])
-        y = data_encoded[target_column]
+        # Create the directory if it doesn't exist
+        data_transformation_dir = Path(self.config.root_dir) / 'artifacts' / 'data_transformation'
+        data_transformation_dir.mkdir(parents=True, exist_ok=True)
 
-        # Check if the lengths of X and y match
-        if len(X) != len(y):
-            raise ValueError("Length of features (X) does not match length of target variable (y)")
+        # Save the encoder inside data_transformation directory
+        encoder_path = data_transformation_dir / 'encoder.pkl'
+        joblib.dump(encoder, encoder_path)
 
-        # Split the data into training and test sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
-
-        # Save the encoder
-        encoder_path = os.path.join(self.config.root_dir, "encoder.pkl")
-        joblib.dump(self.encoder, encoder_path)
-
-        # Save the transformed data as CSV files
-        train_csv_path = os.path.join(self.config.root_dir, "train.csv")
-        test_csv_path = os.path.join(self.config.root_dir, "test.csv")
-        pd.concat([X_train, y_train], axis=1).to_csv(train_csv_path, index=False)
-        pd.concat([X_test, y_test], axis=1).to_csv(test_csv_path, index=False)
-
-        return train_csv_path, test_csv_path, encoder_path
+        # Save the transformed training and test data inside data_transformation directory
+        train_csv_path = data_transformation_dir / 'train.csv'
+        test_csv_path = data_transformation_dir / 'test.csv'
+        X_train.to_csv(train_csv_path, index=False)
+        X_test.to_csv(test_csv_path, index=False)

@@ -5,7 +5,7 @@ from src.mlProject.entity.config_entity import DataValidationConfig
 
 
 
-class DataValidation:
+class DataValiadtion:
     def __init__(self, config: DataValidationConfig):
         self.config = config
 

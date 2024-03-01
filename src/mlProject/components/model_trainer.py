@@ -10,24 +10,26 @@ class ModelTrainer:
     def __init__(self, config: ModelTrainerConfig):
         self.config = config
 
+
+    
     def train(self):
         train_data = pd.read_csv(self.config.train_data_path)
         test_data = pd.read_csv(self.config.test_data_path)
 
-        # Ensure target column is present in the datasets
-        if self.config.target_column not in train_data.columns or self.config.target_column not in test_data.columns:
-            raise ValueError("Target column not found in the dataset")
 
-        # Separate features (X) and target variable (y)
-        train_X = train_data.drop(columns=[self.config.target_column])
-        test_X = test_data.drop(columns=[self.config.target_column])
-        train_y = train_data[self.config.target_column]
-        test_y = test_data[self.config.target_column]
+        train_x = train_data.drop([self.config.target_column], axis=1)
+        train_y = train_data[[self.config.target_column]]
+        test_x = test_data.drop([self.config.target_column], axis=1)
+        test_y = test_data[[self.config.target_column]]
 
-        # Model training
+        # combine train and test data, do one-hot encoding, then split them back
+        combined_data = pd.concat([train_x, test_x])
+        combined_data = pd.get_dummies(combined_data)
+        train_x = combined_data[:len(train_x)]
+        test_x = combined_data[len(train_x):]
+
+
         lr = ElasticNet(alpha=self.config.alpha, l1_ratio=self.config.l1_ratio, random_state=42)
-        lr.fit(train_X, train_y)
+        lr.fit(train_x, train_y)
 
-        # Save the trained model
-        model_path = os.path.join(self.config.root_dir, self.config.model_name)
-        joblib.dump(lr, model_path)
+        joblib.dump(lr, os.path.join(self.config.root_dir, self.config.model_name))
