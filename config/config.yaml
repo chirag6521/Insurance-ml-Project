@@ -17,6 +17,10 @@ data_validation:
 data_transformation:
   root_dir: artifacts/data_transformation
   data_path: artifacts/data_ingestion/insurance.csv
+  categorical_features:
+    - sex
+    - smoker
+    - region
 
 
 model_trainer:
