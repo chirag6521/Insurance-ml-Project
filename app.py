@@ -1,53 +1,37 @@
-from flask import Flask, request, jsonify
-import joblib
-import numpy as np
-from pathlib import Path
-from sklearn.preprocessing import OneHotEncoder
+import pandas as pd
+import streamlit as st
+from src.mlProject.pipeline.prediction import PredictionPipeline
 
-app = Flask(__name__)
-model = joblib.load(Path('artifacts/model_trainer/model.joblib'))
-encoder = joblib.load(Path('artifacts/data_transformation/encoder.pkl'))
+# Create an instance of PredictionPipeline
+pipeline = PredictionPipeline()
 
-def preprocess_input(age, bmi, children, sex, smoker, region):
-    # Encode categorical features
-    sex_encoded = 1 if sex == 'male' else 0
-    smoker_encoded = 1 if smoker == 'yes' else 0
-    region_encoded = 1 if region == 'southwest' else 0  # Assuming 'southwest' as an example
+def main():
+    st.title('Insurance Premium Prediction')
 
-    # Create input array with 11 features
-    data = np.array([[age, bmi, children, 0, 0, 0, sex_encoded, smoker_encoded, region_encoded, 0, 0]])
+    age = st.slider('Enter Age', 18, 100, 18)
+    bmi = st.slider('Enter BMI', 15.0, 50.0, 20.0, 0.1)
+    children = st.slider('Enter Number of Children', 0, 5, 0)
+    sex_male = st.checkbox('Male')
+    smoker_yes = st.checkbox('Smoker')
+    region_northwest = st.checkbox('Northwest')
+    region_southeast = st.checkbox('Southeast')
+    region_southwest = st.checkbox('Southwest')
 
-    # Perform one-hot encoding
-    encoded_data = encoder.transform(data).toarray()
-
-    return encoded_data
-
-@app.route('/predict', methods=['POST'])
-def predict():
-    # Get request data
-    data = request.get_json()
-    
-    # Extract input values
-    age = data['age']
-    bmi = data['bmi']
-    children = data['children']
-    sex = data['sex']
-    smoker = data['smoker']
-    region = data['region']
-    
-    # Preprocess input
-    processed_data = preprocess_input(age, bmi, children, sex, smoker, region)
-    
-    # Make prediction
-    prediction = model.predict(processed_data)
-    
-    # Print prediction and input values for debugging
-    print('Input values:', data)
-    print('Prediction:', prediction[0])
-    
-    # Return prediction
-    response = {'prediction': prediction[0]}
-    return jsonify(response)
+    if st.button('Predict'):
+        input_data = {
+            'age': [age],
+            'bmi': [bmi],
+            'children': [children],
+            'sex_male': [1 if sex_male else 0],
+            'smoker_yes': [1 if smoker_yes else 0],
+            'region_northwest': [1 if region_northwest else 0],
+            'region_southeast': [1 if region_southeast else 0],
+            'region_southwest': [1 if region_southwest else 0]
+        }
+        
+        input_df = pd.DataFrame(input_data)
+        prediction = pipeline.predict(input_df)  # Call predict method on the pipeline instance
+        st.write(f'Predicted Insurance Premium: ${prediction[0]}')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    main()
