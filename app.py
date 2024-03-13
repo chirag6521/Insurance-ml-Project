@@ -1,37 +1,37 @@
-import pandas as pd
 import streamlit as st
-from src.mlProject.pipeline.prediction import PredictionPipeline
-
-# Create an instance of PredictionPipeline
-pipeline = PredictionPipeline()
+import pandas as pd
+from src.mlProject.pipeline.prediction import predict_expenses
 
 def main():
-    st.title('Insurance Premium Prediction')
+    
+    st.title('Insurance Expenses Prediction')
 
-    age = st.slider('Enter Age', 18, 100, 18)
-    bmi = st.slider('Enter BMI', 15.0, 50.0, 20.0, 0.1)
-    children = st.slider('Enter Number of Children', 0, 5, 0)
-    sex_male = st.checkbox('Male')
-    smoker_yes = st.checkbox('Smoker')
-    region_northwest = st.checkbox('Northwest')
-    region_southeast = st.checkbox('Southeast')
-    region_southwest = st.checkbox('Southwest')
+    st.sidebar.header('User Input')
 
-    if st.button('Predict'):
-        input_data = {
-            'age': [age],
-            'bmi': [bmi],
-            'children': [children],
-            'sex_male': [1 if sex_male else 0],
-            'smoker_yes': [1 if smoker_yes else 0],
-            'region_northwest': [1 if region_northwest else 0],
-            'region_southeast': [1 if region_southeast else 0],
-            'region_southwest': [1 if region_southwest else 0]
-        }
+    age = st.sidebar.number_input('Age', min_value=0, max_value=100, value=30)
+    bmi = st.sidebar.number_input('BMI', min_value=10.0, max_value=50.0, value=25.0)
+    children = st.sidebar.number_input('Number of Children', min_value=0, max_value=10, value=0)
+    sex_male = st.sidebar.radio('Sex (Male)', [0, 1], index=1)  # 1 for male, 0 for female
+    smoker_yes = st.sidebar.radio('Smoker (Yes)', [0, 1], index=0)  # 1 for smoker, 0 for non-smoker
+    region_northwest = st.sidebar.radio('Region (Northwest)', [0, 1], index=0)  # One-hot encoded region features
+    region_southeast = st.sidebar.radio('Region (Southeast)', [0, 1], index=0)
+    region_southwest = st.sidebar.radio('Region (Southwest)', [0, 1], index=0)
+
+    input_data = pd.DataFrame({
+        'age': [age],
+        'bmi': [bmi],
+        'children': [children],
+        'sex_male': [sex_male],
+        'smoker_yes': [smoker_yes],
+        'region_northwest': [region_northwest],
+        'region_southeast': [region_southeast],
+        'region_southwest': [region_southwest]
+    })
+
+    if st.sidebar.button('Predict'):
+        predicted_expenses = predict_expenses(input_data)
         
-        input_df = pd.DataFrame(input_data)
-        prediction = pipeline.predict(input_df)  # Call predict method on the pipeline instance
-        st.write(f'Predicted Insurance Premium: ${prediction[0]}')
+        st.write('Predicted Expenses:', predicted_expenses)
 
 if __name__ == '__main__':
     main()

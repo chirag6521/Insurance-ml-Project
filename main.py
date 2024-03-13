@@ -40,27 +40,27 @@ try:
 except Exception as e:
         logger.exception(e)
         raise e
-    
+
 STAGE_NAME = "Model Trainer stage"
-try:
-   logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<") 
-   config_manager = ConfigurationManager()
-   config = config_manager.get_model_trainer_config()
-   data_ingestion = ModelTrainerTrainingPipeline(config=config)
-   data_ingestion.main()
-   logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
-except Exception as e:
+if __name__ == '__main__':
+    try:
+        logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<")
+        config_manager = ConfigurationManager()
+        config = config_manager.get_model_trainer_config()
+        model_trainer = ModelEvaluationTrainingPipeline(config=config)
+        model_trainer.main()
+        logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+    except Exception as e:
         logger.exception(e)
         raise e
 
-STAGE_NAME = "Model evaluation stage"
-try:
-   logger.info(f">>>>>> stage {STAGE_NAME} started <<<<<<") 
-   config_manager = ConfigurationManager()
-   config = config_manager.get_model_trainer_config()
-   data_ingestion = ModelEvaluationTrainingPipeline(config=config)
-   data_ingestion.main()
-   logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
-except Exception as e:
+if __name__ == '__main__':
+    try:
+        config_manager = ConfigurationManager()
+        config = config_manager.get_model_evaluation_config()
+        model_evaluation = ModelEvaluationTrainingPipeline(config=config)
+        model_evaluation.main()
+        logger.info(f">>>>>> stage {STAGE_NAME} completed <<<<<<\n\nx==========x")
+    except Exception as e:
         logger.exception(e)
         raise e

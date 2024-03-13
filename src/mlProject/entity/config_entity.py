@@ -18,9 +18,9 @@ class DataValidationConfig:
     
 @dataclass(frozen=True)
 class DataTransformationConfig:
-    root_dir: str
-    data_path: str
-    categorical_features: list
+    root_dir: Path
+    data_path: Path
+    categorical_features: list = None
     
 @dataclass(frozen=True)
 class ModelTrainerConfig:
